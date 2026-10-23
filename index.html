@@ -1,0 +1,259 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smart Multi-Stop Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--g:#176B55;--mint:#E5F3EC;--bg:#FAFBF9;--tx:#34423D;--blue:#DCEAF5;--amb:#D99A2B;--red:#C94C4C;--bd:#DDE5E0;--mut:#68786F;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 Inter,system-ui,"Segoe UI",sans-serif}
+header{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;padding:12px 20px;background:#fff;border-bottom:1px solid var(--bd);border-top:3px solid var(--g)}
+h1{font-size:18px;margin:0;font-weight:700}header p{margin:0;color:var(--mut)}h2{font-size:13px;margin:18px 0 6px;font-weight:600}
+main{display:grid;grid-template-columns:340px minmax(0,1fr) 370px;height:calc(100vh - 56px)}
+aside{overflow:auto;padding:14px 16px;background:#fff}#left{border-right:1px solid var(--bd)}#right{border-left:1px solid var(--bd)}
+#mapwrap{position:relative;min-height:340px;background:#E8F0EB;overflow:hidden}#map{position:absolute;inset:0;width:100%;height:100%;cursor:grab;touch-action:none;display:block}
+.ctl{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:4px}.ctl button{width:36px;height:36px;padding:0;font-size:18px;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+#legend{position:absolute;left:10px;bottom:10px;background:#fff;border:1px solid var(--bd);border-radius:6px;padding:6px 10px;font-size:12px;box-shadow:0 1px 3px rgba(0,0,0,.12);max-width:75%}
+label{display:block;font-size:12px;color:var(--mut);margin-top:8px}label.chk{display:flex;gap:8px;align-items:flex-start;margin-top:12px}label.chk input,label.pk input{width:auto;margin:0}
+input,select{width:100%;margin-top:3px;padding:8px 9px;border:1px solid var(--bd);border-radius:6px;background:#fff;color:var(--tx);font:inherit}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--g);outline-offset:1px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.btn{font:inherit;padding:8px 12px;border:1px solid var(--bd);border-radius:6px;background:#fff;color:var(--tx);cursor:pointer;white-space:nowrap}.btn:hover{background:var(--mint)}
+.btn.primary{width:100%;margin-top:14px;padding:12px;background:var(--g);border-color:var(--g);color:#fff;font-weight:600;font-size:15px}.btn.primary:hover{background:#135c48}.btn:disabled{opacity:.6;cursor:progress}
+.link{background:none;border:0;color:var(--g);cursor:pointer;font:inherit;margin-top:8px;padding:0;text-decoration:underline}
+.mut{color:var(--mut);font-weight:400}ul{list-style:none;margin:0;padding:0}
+details.dd{border:1px solid var(--bd);border-radius:6px}details.dd summary{padding:8px 10px;cursor:pointer;font-weight:500}#ddl{max-height:210px;overflow:auto;border-top:1px solid var(--bd);padding:4px 6px}
+label.pk{display:flex;gap:8px;align-items:center;margin:0;padding:5px 4px;font-size:13px;color:var(--tx);cursor:pointer}label.pk:hover{background:var(--mint)}
+.stop{border:1px solid var(--bd);border-radius:8px;padding:8px;margin:6px 0;cursor:pointer}.stop.sel{background:var(--mint);border-color:var(--g)}
+.acts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}.acts .btn{padding:5px 10px;font-size:12px}
+.top{display:flex;gap:8px;align-items:center}.top b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.top .btn{padding:2px 7px}
+.num{flex:none;width:22px;height:22px;border-radius:50%;background:var(--g);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:600}
+.f{display:grid;grid-template-columns:1.2fr .9fr 1fr;gap:6px;margin-top:8px}.fl{margin:0;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--mut)}.f select,.f input{margin:3px 0 0;padding:5px 6px;font-size:12px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--tx)}
+.note{position:relative;border-radius:10px;padding:10px 12px 10px 40px;margin:10px 0;font-size:13px;line-height:1.5}.note::before{content:"i";position:absolute;left:12px;top:11px;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:#3F7CAC}.note b{font-weight:600}.info{background:#EAF3FA;border:1px solid #CFE2F1}.warn{background:#FCF4E3;border:1px solid #F0DDB2}.warn::before{content:"!";background:var(--amb)}.err{background:#FBEDED;border:1px solid #EFC9C9}.err::before{content:"!";background:var(--red)}.ok{background:var(--mint);border:1px solid #C5E2D3}.ok::before{content:"✓";background:var(--g)}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}th,td{padding:6px 4px;border-bottom:1px solid var(--bd);text-align:right}th:first-child,td:first-child{text-align:left}th{font-weight:500;color:var(--mut);font-size:12px}
+.it{display:flex;gap:10px;padding:8px;border:1px solid var(--bd);border-radius:8px;margin:6px 0;cursor:pointer}.it.sel{background:var(--mint);border-color:var(--g)}.it small{color:var(--mut)}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--bd);border-top-color:var(--g);border-radius:50%;animation:s .8s linear infinite;vertical-align:-2px;margin-right:6px}@keyframes s{to{transform:rotate(360deg)}}
+.empty{color:var(--mut);padding:20px 4px;text-align:center}textarea{width:100%;height:140px;font:12px/1.4 ui-monospace,monospace;border:1px solid var(--bd);border-radius:6px;padding:6px;margin-top:8px}
+@media(max-width:1000px){main{display:flex;flex-direction:column;height:auto}#mapwrap{height:62vh;order:2;flex:none}#left{order:1;border:0}#right{order:3;border:0}}
+header{align-items:center;gap:12px;padding:10px 20px}.logo{flex:none;width:36px;height:36px}.brand h1{line-height:1.2}.brand p{font-size:12.5px;margin-top:1px}.badge{margin-left:auto;font-size:12px;font-weight:600;color:var(--g);background:var(--mint);border:1px solid #C5E2D3;border-radius:999px;padding:3px 11px}
+.hdr-r{margin-left:auto;display:flex;gap:8px;align-items:center}.hdr-r .badge{margin-left:0}.docbtn{display:inline-flex;gap:6px;align-items:center;padding:5px 12px;font-weight:600;color:var(--g);border-color:#C5E2D3}
+dialog{border:0;border-radius:16px;padding:0;width:min(720px,94vw);max-height:88vh;overflow:hidden;box-shadow:0 24px 70px rgba(20,35,28,.35);color:var(--tx);background:#fff}dialog::backdrop{background:rgba(30,45,38,.5)}.docin{padding:0 28px 28px;overflow:auto;max-height:88vh}.dh{position:sticky;top:0;background:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 0 12px;border-bottom:1px solid var(--bd);margin-bottom:6px}.dh h2{margin:0;font-size:20px;line-height:1.25}.dh small{color:var(--mut);font-size:12px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}.chips span{font-size:12px;background:var(--mint);color:var(--g);border-radius:999px;padding:3px 10px;font-weight:600}.docin h3{font-size:15px;margin:22px 0 6px;color:var(--g)}.docin p{margin:6px 0;line-height:1.6}.docin ul.pts{list-style:disc;padding-left:20px;margin:6px 0}.docin ul.pts li{margin:4px 0;line-height:1.55}
+.tl{border-left:2px solid var(--bd);margin:10px 0 0 10px;padding-left:18px}.tl .st{position:relative;margin-bottom:16px}.tl .st::before{content:attr(data-v);position:absolute;left:-33px;top:0;width:28px;height:28px;border-radius:50%;background:var(--g);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;border:3px solid #fff}.tl b{display:block;margin-bottom:2px}.q{background:var(--blue);border-radius:10px;padding:10px 14px;margin:10px 0}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.kpi{border:1px solid var(--bd);border-radius:10px;padding:9px 10px;background:#fff}.kpi span{display:block;font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}.kpi b{display:block;font-size:17px;margin:2px 0;color:var(--g)}.kpi small{font-size:11px;color:var(--mut)}
+.cmpwrap{border:1px solid var(--bd);border-radius:10px;overflow:hidden;background:#fff}.cmp th{background:#F3F7F4;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.cmp td{padding:9px 10px}.cmp tr:last-child td{border-bottom:0}.cmp tr.tot td{background:#F3F7F4;font-weight:600}
+.pill{display:inline-block;min-width:46px;text-align:center;padding:2px 8px;border-radius:999px;font-size:12px;background:#EEF2EF;color:var(--mut)}.pill.up{background:var(--mint);color:var(--g);font-weight:700}.pill.dn{background:#FBEDED;color:var(--red);font-weight:600}
+.ctl{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:3px;gap:2px;box-shadow:0 2px 10px rgba(20,40,30,.12)}.ctl button{border:0;border-radius:9px;background:transparent;box-shadow:none}.ctl button:hover{background:var(--mint)}.ctl button:disabled{opacity:.35;cursor:not-allowed;background:transparent}
+#legend{background:rgba(255,255,255,.95);border-radius:12px;padding:8px 12px;box-shadow:0 2px 10px rgba(20,40,30,.12);line-height:1.5}.acts .btn.add{flex:1.4;background:var(--g);border-color:var(--g);color:#fff;font-weight:600;font-size:13px;padding:9px 16px;box-shadow:0 2px 6px rgba(23,107,85,.3)}.acts .btn.add:hover{background:#135c48}
+.mchip{position:absolute;left:10px;top:10px;font-size:11.5px;font-weight:600;color:var(--g);background:rgba(255,255,255,.95);border:1px solid #C5E2D3;border-radius:999px;padding:4px 11px;box-shadow:0 1px 4px rgba(20,40,30,.1)}#map g[data-pt]{filter:drop-shadow(0 1px 2px rgba(20,40,30,.28))}.sw.o{border-top:3px solid #B8C4BD}
+.seq{border:1px solid var(--bd);border-radius:10px;background:#fff;padding:4px 12px;margin:12px 0}.seq>div{padding:8px 0;border-bottom:1px solid var(--bd)}.seq>div:last-child{border:0}.seq b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);font-weight:600}.seq code{display:block;font:600 13px/1.7 Inter,system-ui,sans-serif;color:var(--tx)}.sw{display:inline-block;width:18px;border-top:3px solid var(--g);vertical-align:middle;margin-right:7px}.sw.o{border-top:3px solid #B8C4BD}
+.nn{display:inline-block;font-size:10.5px;font-weight:700;color:var(--g);background:var(--mint);border-radius:999px;padding:1px 7px;margin-left:4px}
+.cap{font-size:12px;color:var(--mut);margin:8px 2px;line-height:1.5}.hint{font-size:12px;color:var(--mut);background:#F3F7F4;border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.5}.empty{border:1px dashed var(--bd);border-radius:10px;background:var(--bg);padding:22px 14px}.it{border-radius:10px}
+@media(prefers-reduced-motion:reduce){.spin{animation:none}}
+</style></head><body>
+<header><svg class="logo" viewBox="0 0 40 40" role="img" aria-label="Smart Multi-Stop Planner logo"><rect width="40" height="40" rx="10" fill="#176B55"/><path d="M8 31c5 0 5-6 10-6s4 4 9 4" fill="none" stroke="#fff" stroke-opacity=".65" stroke-width="2" stroke-dasharray="2 3.2" stroke-linecap="round"/><circle cx="8" cy="31" r="2.6" fill="#E5F3EC"/><path d="M26 6c-4.1 0-7 3-7 6.800 0 4.700 7 11.700 7 11.700s7-7 7-11.700C33 9 30.100 6 26 6z" fill="#fff"/><circle cx="26" cy="12.800" r="2.800" fill="#176B55"/></svg><div class="brand"><h1>Smart Multi-Stop Planner</h1><p>Pick places, press optimise, and watch a better route take shape.</p></div><div class="hdr-r"><span class="badge">Fictional demo town</span><button class="btn docbtn" id="docbtn" aria-haspopup="dialog"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.8h5.5L13 5.300V14.200H4z"/><path d="M9.500 1.800V5.300H13M6 8.500h5M6 11h5"/></svg>Case study</button></div></header>
+<main>
+<aside id="left" aria-label="Trip setup">
+ <h2 style="margin-top:0">Places</h2>
+ <details class="dd" id="dd"><summary id="ddc">Choose places from the list</summary><div id="ddl"></div></details>
+ <div class="acts"><button class="btn" id="addsel">Add selected to trip</button><button class="btn" id="allsel">Select all</button></div>
+ <h2>Add your own place</h2>
+ <input id="cn" list="dn" autocomplete="off" placeholder="Name, e.g. Daisy’s Bakery" aria-label="Place name"><datalist id="dn"></datalist>
+ <div class="grid2"><label>x (0–100)<input id="cx" type="number" step="0.1" list="xs" placeholder="e.g. 40"><datalist id="xs"></datalist></label><label>y (0–100)<input id="cy" type="number" step="0.1" list="ys" placeholder="e.g. 65"><datalist id="ys"></datalist></label></div>
+ <div class="acts"><button class="btn add" id="cadd">+ Add place</button><button class="btn" id="cmap">Place on map</button></div>
+ 
+ <h2>Start and end</h2>
+ <div class="grid2"><label>Start<select id="st"></select></label><label>End (optional)<select id="en"></select></label></div>
+ <h2>Destinations <span id="cnt" class="mut"></span></h2><ul id="stops"></ul>
+ <h2>Trip details</h2>
+ <div class="grid2">
+  <label>Travel mode<select id="mode"><option value="drive">Drive</option><option value="cycle">Cycle</option><option value="walk">Walk</option></select></label>
+  <label>Departure<input id="dep" type="time" value="09:00"></label>
+  <label>Available time (min)<input id="avail" type="number" min="15" step="15" value="480"></label>
+  <label>Cost per km (drive)<input id="cpk" type="number" min="0" step="0.5" value="8"></label>
+ </div>
+ <label>Optimise for<select id="obj"><option value="balanced">Balanced</option><option value="time">Fastest journey</option><option value="dist">Shortest distance</option><option value="cost">Lowest estimated cost</option></select></label>
+ <button class="btn primary" id="go">Optimise my route</button>
+ <button class="link" id="load">Reload the zigzag demo trip</button>
+</aside>
+<section id="mapwrap" aria-label="Map"><svg id="map" role="img" aria-label="Interactive town map with route"></svg>
+ <div class="mchip">Synthetic coordinate map · not road navigation</div><div class="ctl"><button class="btn" id="zi" aria-label="Zoom in">+</button><button class="btn" id="zo" aria-label="Zoom out">−</button><button class="btn" id="zf" aria-label="Fit map to trip" style="font-size:12px">Fit</button></div>
+ <div id="legend"></div></section>
+<aside id="right" aria-label="Results"><div id="res"></div></aside>
+</main>
+<dialog id="doc" aria-labelledby="dt"><div class="docin"><div class="dh"><div><h2 id="dt">Case study: from zigzag errands to a smarter route</h2><small>Smart Multi-Stop Planner</small></div><button class="btn" id="docx" aria-label="Close case study">✕ Close</button></div>
+<div class="chips"><span>Single-file web app</span><span>Vanilla JS + SVG</span><span>Demo data, no live maps</span></div>
+<h3>The problem I ran into</h3><p>Planning a day of errands, I listed stops in whatever order I remembered them. The route then criss-crossed town, passing the same junctions again and again. The pain was never one long leg. It was many avoidable ones. A zigzag version of that trip is still the demo loaded when you open the app.</p>
+<h3>The insight</h3><div class="q">The order of stops is the biggest lever, but a shorter order is only useful if it respects real life: a must-do stop, fixed visit times and a limited day.</div>
+<h3>How I iterated</h3><div class="tl">
+<div class="st" data-v="1"><b>Find the shortest order</b>Tried every possible order for small trips and compared the best one with the order entered. A clear before-and-after was enough to prove the idea.</div>
+<div class="st" data-v="2"><b>Add real-life constraints</b>Added priorities (Must Visit, Important, Flexible), visit durations, lock-a-stop-at-position and an available-time limit. When a day is too long, Flexible stops are dropped first, then Important ones. Must Visit and locked stops are never dropped, and the app says what was left out and how much time that frees.</div>
+<div class="st" data-v="3"><b>Handle bigger trips</b>Trying every order stops being practical as stops grow. Above 8 stops the planner builds a nearest-neighbour route, then improves it with 2-opt reversals and stop moves. The result is labelled “best found”, not “guaranteed shortest”.</div>
+<div class="st" data-v="4"><b>Make it trustworthy</b>Added a map animation showing your original order against the orders tried. Added an original-versus-optimised table, a “why this order” explanation, scattered-trip warnings and a plain “demo estimates” notice.</div>
+<div class="st" data-v="5"><b>Polish and explore</b>Added a logo, summary tiles, clearer notes, and demo places that preview live on the map. The demo now uses a fixed 12-point coordinate dataset (a start plus stops A–K) with a closed tour that returns to the start.</div></div>
+<h3>What I built</h3><ul class="pts"><li><b>Setup panel:</b> places, start and end, priorities, visit times, travel mode, departure, time available and optimisation goal.</li><li><b>Interactive map:</b> pan, zoom, direction arrows, and click-to-add places.</li><li><b>Results panel:</b> savings, a timed itinerary, conflict guidance and a shareable summary.</li></ul>
+<h3>Decisions and trade-offs</h3><ul class="pts"><li><b>Fictional town:</b> keeps the product runnable anywhere with no keys or live data. Distances are Euclidean on schematic coordinates at fixed speeds and are always labelled as estimates.</li><li><b>Separate engine:</b> the planner works from a distance and duration matrix, so real routing data could replace the demo matrix without rewriting the logic.</li><li><b>Honest wording:</b> the app says when a result is a best guess, and explains drops and conflicts instead of failing silently.</li></ul>
+<h3>Product documentation</h3><ul class="pts"><li><b>Algorithm:</b> a nearest-neighbour route is improved with 2-opt reversals and single-stop moves. It also starts from your entered order if that is better, so the result is never worse than the original. Locks and priorities are respected.</li><li><b>Assumptions:</b> positions are schematic map units (0–100), 1 unit = 50 m. Distance is Euclidean. Time uses fixed speeds (drive 28, cycle 14, walk 4.8 km/h). Cost is distance × your per-km rate. Visit time is tracked separately from travel time.</li><li><b>Success metrics:</b> distance saved and % reduction, travel time saved, estimated cost saved, and every stop visited exactly once with a return to the start. All are calculated from the actual sequences.</li><li><b>Limitations:</b> not real roads, GPS or traffic. With more than 8 stops the result is the best order found, not a proven optimum. Costs exclude tolls, parking and fuel changes.</li></ul>
+<h3>What’s next</h3><ul class="pts"><li>Real road distances and live travel times</li><li>Opening hours and time windows per stop</li><li>Splitting a long trip across several days</li><li>Exporting the route to a maps app</li></ul></div></dialog>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* ===== Engine (pure). Matrix: dist in metres, dur in seconds ===== */
+const fmtMin=m=>{m=Math.round(m);return m>=60?`${Math.floor(m/60)}h ${String(m%60).padStart(2,'0')}m`:`${m}m`},clock=m=>{m=Math.round(m)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
+function evaluate(o,M,st,s){const p=[s.start,...o.map(i=>st[i].mi),...(s.end!=null?[s.end]:[])];let d=0,t=0;for(let i=1;i<p.length;i++){d+=M.dist[p[i-1]][p[i]];t+=M.dur[p[i-1]][p[i]]}const visit=o.reduce((a,i)=>a+st[i].visit,0),dist=d/1000,travel=t/60;return{dist,travel,visit,total:travel+visit,cost:s.cpk!=null?dist*s.cpk:null}}
+const val=(e,obj,b)=>obj==='time'?e.travel:(obj==='dist'||obj==='cost')?e.dist:e.dist/(b.dist||1)+e.travel/(b.travel||1);
+const lockOk=(o,st)=>o.every((id,i)=>!st[id].lock||Math.min(st[id].lock,o.length)-1===i);
+function solve(ids,M,st,s,obj,base,tr){const n=ids.length;if(n<2)return{order:ids.slice(),exact:true};const sc=o=>val(evaluate(o,M,st,s),obj,base);
+ if(n<=8){let best=null,bs=Infinity;const cur=[],used=Array(n).fill(false);(function rec(){if(cur.length===n){if(lockOk(cur,st)){const v=sc(cur);if(v<bs){bs=v;best=cur.slice();tr&&tr.push(best)}}return}for(let i=0;i<n;i++)if(!used[i]){used[i]=true;cur.push(ids[i]);rec();cur.pop();used[i]=false}})();return{order:best||ids.slice(),exact:!!best}}
+ const free=ids.filter(i=>!st[i].lock),locked=ids.filter(i=>st[i].lock).sort((a,b)=>st[a].lock-st[b].lock);let cur=s.start,o=[];
+ while(free.length){let k=0;free.forEach((id,i)=>{if(M.dist[cur][st[id].mi]<M.dist[cur][st[free[k]].mi])k=i});const id=free.splice(k,1)[0];o.push(id);cur=st[id].mi}
+ locked.forEach(id=>o.splice(Math.min(st[id].lock,n)-1,0,id));if(lockOk(ids,st)&&sc(ids)<sc(o))o=ids.slice();let best=sc(o),imp=true,g=0;tr&&tr.push(o.slice());const tq=q=>{if(lockOk(q,st)){const v=sc(q);if(v<best-1e-9){o=q;best=v;imp=true;tr&&tr.push(o.slice())}}};
+ while(imp&&g++<50){imp=false;for(let i=0;i<n-1;i++)for(let j=i+1;j<n;j++)tq([...o.slice(0,i),...o.slice(i,j+1).reverse(),...o.slice(j+1)]);for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(i!==j){const q=o.slice();q.splice(j,0,q.splice(i,1)[0]);tq(q)}}
+ return{order:o,exact:false}}
+function plan(list,M,s){const st=Object.fromEntries(list.map(x=>[x.id,{...x}])),conflicts=[],seen={};
+ Object.values(st).forEach(x=>{if(x.lock){if(seen[x.lock]){conflicts.push(`${x.name}: position ${x.lock} is already locked by ${seen[x.lock]}, so this lock was ignored.`);x.lock=null}else seen[x.lock]=x.name}});
+ let ids=list.map(x=>x.id),dropped=[];const E=o=>evaluate(o,M,st,s),base=E(ids),trace=[];let r=solve(ids,M,st,s,s.obj,base,trace),tot=E(r.order).total;
+ while(tot>s.avail){const pool=['Flexible','Important'].map(p=>ids.filter(i=>st[i].priority===p&&!st[i].lock)).find(a=>a.length);if(!pool)break;let pick=null;
+  pool.forEach(c=>{const ri=solve(ids.filter(i=>i!==c),M,st,s,s.obj,base),t=E(ri.order).total;if(!pick||t<pick.t)pick={c,t,ri}});dropped.push({stop:st[pick.c],saved:tot-pick.t});ids=ids.filter(i=>i!==pick.c);r=pick.ri;tot=pick.t}
+ const orig=E(ids),opt=E(r.order);let frames=trace.map(o=>({o,d:E(o).dist}));if(dropped.length||!frames.length)frames.push({o:r.order,d:opt.dist});
+ return{order:r.order,exact:r.exact,orig,opt,dropped,feasible:opt.total<=s.avail+1e-9,overBy:Math.max(0,opt.total-s.avail),buffer:s.avail-opt.total,conflicts,kept:ids,st,frames}}
+function schedule(o,M,st,s,dep){let t=dep,prev=s.start;const rows=o.map(id=>{const m=st[id].mi,d=M.dist[prev][m]/1000,tr=M.dur[prev][m]/60;t+=tr;const arrive=t;t+=st[id].visit;prev=m;return{id,d,tr,arrive,depart:t}});let end=null;if(s.end!=null){const d=M.dist[prev][s.end]/1000,tr=M.dur[prev][s.end]/60;t+=tr;end={d,tr,arrive:t}}return{rows,end,finish:t}}
+function outliers(ids,M,st,s){if(ids.length<3)return[];const nn=ids.map(id=>Math.min(...[s.start,...ids.filter(j=>j!==id).map(j=>st[j].mi)].map(m=>M.dist[st[id].mi][m]))/1000),med=[...nn].sort((a,b)=>a-b)[nn.length>>1];return ids.filter((_,i)=>nn[i]>Math.max(15,2.5*med))}
+/* ===== Fictional town data: x = km east, y = km north ===== */
+const PL=[["Central Station",50,50],["Cedar Co-working",20,85],["Mary’s Church",80,25],["City Hospital",90,80],["Lincoln Stadium",25,20],["Sunrise Mall",85,10],["Green Park",15,15],["St. Joseph’s School",35,30],["Oak Street Bakery",10,60],["Peter’s Lake",25,75],["Riverside Café",70,55],["Rose Garden",45,10]];
+const SPEED={drive:28,cycle:14,walk:4.8},SCALE=0.05;
+const demoMatrix=(pts,mode)=>{const dist=pts.map(a=>pts.map(b=>Math.hypot(a.x-b.x,a.y-b.y)*SCALE*1000));return{dist,dur:dist.map(r=>r.map(d=>d/(SPEED[mode]/3.6)))}};
+/* ===== State ===== */
+let uid=1;const S={start:null,end:null,stops:[],custom:[],pick:new Set(),sel:null,res:null,anim:null,msg:null,busy:false,share:null,cfg:null,run:0,arm:null},PRI=['Must Visit','Important','Flexible'];
+const allPlaces=()=>[...PL.map(p=>({name:p[0],x:p[1],y:p[2]})),...S.custom];
+const byName=n=>allPlaces().find(p=>p.name===n);
+try{const d=JSON.parse(localStorage.getItem('smp4')||'null');if(d&&d.stops&&d.stops.length){Object.assign(S,{start:d.start,end:d.end,stops:d.stops,custom:d.custom||[]});uid=1+Math.max(0,...d.stops.map(x=>x.id))}}catch(e){}
+const cfg=()=>({mode:$('#mode').value,dep:(([h,m])=>h*60+m)($('#dep').value.split(':').map(Number)),avail:+$('#avail').value||0,cpk:$('#mode').value==='drive'&&$('#cpk').value!==''?+$('#cpk').value:null,obj:$('#obj').value});
+const save=()=>{try{localStorage.setItem('smp4',JSON.stringify({start:S.start,end:S.end,stops:S.stops,custom:S.custom}))}catch(e){}};
+const near=(a,b)=>Math.abs(a.x-b.x)<.05&&Math.abs(a.y-b.y)<.05;
+/* ===== Map (km plane, pan/zoom, arrows, animation) ===== */
+let W=800,H=600,V={x:50,y:50,k:5},drag={moved:false},raf=0;
+const sp=(x,y)=>({x:(x-V.x)*V.k+W/2,y:H/2-(y-V.y)*V.k}),un=(sx,sy)=>({x:V.x+(sx-W/2)/V.k,y:V.y-(sy-H/2)/V.k});
+const stopById=id=>S.stops.find(x=>x.id==id),pathOf=ids=>[S.start,...ids.map(stopById),...(S.end?[S.end]:[])].filter(Boolean);
+function fitView(){const pts=[S.start,...S.stops,S.end].filter(Boolean);if(!pts.length){V={x:50,y:50,k:Math.min(W,H)/110};return}
+ const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y),dx=Math.max(...xs)-Math.min(...xs)||1,dy=Math.max(...ys)-Math.min(...ys)||1;V={x:(Math.max(...xs)+Math.min(...xs))/2,y:(Math.max(...ys)+Math.min(...ys))/2,k:Math.max(4,Math.min(90,(W-150)/dx,(H-150)/dy))}}
+function size(){const r=$('#map').getBoundingClientRect();W=Math.round(r.width)||800;H=Math.round(r.height)||600;$('#map').setAttribute('viewBox',`0 0 ${W} ${H}`)}
+const rect=(x0,y0,x1,y1,f)=>{const a=sp(x0,y1),b=sp(x1,y0);return`<rect x="${a.x}" y="${a.y}" width="${b.x-a.x}" height="${b.y-a.y}" rx="6" fill="${f}"/>`};
+const road=(pts,lab)=>{const P=pts.map(p=>sp(p[0],p[1])),X=(a,b)=>({x:a.x+(a.x-b.x)*.7,y:a.y+(a.y-b.y)*.7}),s=[X(P[0],P[1]),...P,X(P[P.length-1],P[P.length-2])].map(q=>q.x+','+q.y).join(' '),w=Math.max(5,V.k*.16);return`<polyline points="${s}" fill="none" stroke="#C9D3CC" stroke-width="${w+3}" stroke-linecap="round"/><polyline points="${s}" fill="none" stroke="#fff" stroke-width="${w}" stroke-linecap="round"/>`+(lab?`<text x="${P[0].x+10}" y="${P[0].y-6}" font-size="11" font-style="italic" fill="#7b8b83">${lab}</text>`:'')};
+const arrow=(a,b,col,t=.55)=>{const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy);if(L<38)return'';return`<polygon points="-9,-7 9,0 -9,7" fill="${col}" stroke="#fff" stroke-width="1.6" transform="translate(${a.x+dx*t},${a.y+dy*t}) rotate(${Math.atan2(dy,dx)*180/Math.PI})"/>`};
+const zig=(a,b)=>[a,b];
+function legs(pts,upto,o){let g='';const P=pts.map(p=>sp(p.x,p.y));for(let i=1;i<P.length&&i<=upto;i++){const Z=zig(P[i-1],P[i],i),ps=Z.map(q=>q.x+','+q.y).join(' ');if(o.case)g+=`<polyline points="${ps}" fill="none" stroke="#fff" stroke-width="${o.w+4}" stroke-linecap="round" stroke-linejoin="round"/>`;g+=`<polyline points="${ps}" fill="none" stroke="${o.c}" stroke-width="${o.w}" stroke-linecap="round" stroke-linejoin="round" ${o.dash?`stroke-dasharray="${o.dash}"`:''} opacity="${o.op||1}"/>`;if(o.arr&&Math.hypot(P[i].x-P[i-1].x,P[i].y-P[i-1].y)>=50){const j=Math.floor((Z.length-1)/2),s=Z[j],e=Z[j+1];g+=`<polygon points="-9,-7 9,0 -9,7" fill="${o.c}" stroke="#fff" stroke-width="1.6" transform="translate(${(s.x+e.x)/2},${(s.y+e.y)/2}) rotate(${Math.atan2(e.y-s.y,e.x-s.x)*180/Math.PI})"/>`}}return g}
+function drawMap(){size();lim();const A=S.anim,R=S.res;let g='';
+ g+=`<rect width="${W}" height="${H}" fill="#F7FAF8"/>`;for(let x=-60;x<=160;x+=10){const q=sp(x,0).x;if(q>-5&&q<W+5)g+=`<line x1="${q}" x2="${q}" y1="0" y2="${H}" stroke="#E1EBE5" stroke-width="1"/>${x%20===0&&x>=0&&x<=100?`<text x="${q+3}" y="${H-6}" font-size="10" fill="#8FA39A">${x}</text>`:''}`}
+ for(let y=-60;y<=160;y+=10){const q=sp(0,y).y;if(q>-5&&q<H+5)g+=`<line y1="${q}" y2="${q}" x1="0" x2="${W}" stroke="#E1EBE5" stroke-width="1"/>${y%20===0&&y>=0&&y<=100?`<text x="4" y="${q-3}" font-size="10" fill="#8FA39A">${y}</text>`:''}`}
+ 
+ 
+ g+=rect(33,58,44,70,'#DCEEE2')+rect(52,78,70,92,'#DCEEE2')+rect(60,8,76,20,'#E6F1E3')+rect(2,22,12,36,'#E6F1E3');const lk=sp(26,77);g+=`<polyline points="${[[-60,43],[0,41],[30,39],[55,44],[80,40],[100,42],[160,40]].map(p=>{const q=sp(p[0],p[1]);return q.x+','+q.y}).join(' ')}" fill="none" stroke="#D6E7F3" stroke-width="${Math.max(6,V.k*1.6)}" stroke-linecap="round"/><ellipse cx="${lk.x}" cy="${lk.y}" rx="${V.k*7}" ry="${V.k*4.5}" fill="#D6E7F3" stroke="#BCD5E8" stroke-width="2"/>`;
+ g+=road([[0,50],[100,50]],'Main Street')+road([[50,0],[50,100]],'Station Road')+road([[0,25],[100,25]],'South Avenue')+road([[0,75],[100,75]],'North Avenue')+road([[25,0],[25,100]],'West Street')+road([[75,0],[75,100]],'East Street');
+ const used=[S.start,...S.stops,S.end].filter(Boolean);
+ allPlaces().forEach((p,i)=>{if(used.some(u=>near(u,p)))return;const q=sp(p.x,p.y);if(q.x<-20||q.x>W+20||q.y<-20||q.y>H+20)return;g+=`<g data-pt="1" onclick="addCtx(${i})" style="cursor:pointer"><title>Add ${esc(p.name)}</title><circle cx="${q.x}" cy="${q.y}" r="11" fill="transparent"/><circle cx="${q.x}" cy="${q.y}" r="5" fill="#8fa89d" stroke="#fff" stroke-width="1.5"/>${V.k>=12?`<text x="${q.x+8}" y="${q.y+3}" font-size="10" fill="#44544d" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(p.name)}</text>`:''}</g>`});
+ let cur=S.stops.map(s=>s.id),lg='';
+ if(A){cur=A.order;const oPath=pathOf(A.origOrder);
+  if(A.kind==='orig'){g+=legs(oPath,A.upto,{c:'#68786F',w:3,dash:'7 6',arr:1});lg=`<b>Original route</b>: drawing leg ${Math.min(A.upto,oPath.length-1)} of ${oPath.length-1}`}
+  else{g+=legs(oPath,99,{c:'#68786F',w:2.5,dash:'7 6',op:.55});g+=legs(pathOf(A.order),99,{c:A.last?'#176B55':'#D99A2B',w:A.last?5:4,case:1,arr:1});lg=A.last?`<b style="color:#176B55">Best order found</b>: ${A.d.toFixed(1)} km`:`<b>Trying orders</b> ${A.i}/${A.n}: ${A.d.toFixed(1)} km`}}
+ else if(R){cur=R.order;g+=legs(pathOf(R.order),99,{c:'#176B55',w:5,case:1,arr:1});lg='<b style="color:#176B55">━▶</b> Optimised route'}
+ const mk=(p,l,c,id)=>{const q=sp(p.x,p.y),on=S.sel===id;return`<g data-pt="1" onclick="select('${id}')" style="cursor:pointer" tabindex="0" role="button" aria-label="${esc(l+': '+p.name)}"><title>${esc(p.name)}</title>${on?`<circle cx="${q.x}" cy="${q.y}" r="22" fill="#D99A2B" opacity=".35"/>`:''}<circle cx="${q.x}" cy="${q.y}" r="14" fill="${on?'#D99A2B':c}" stroke="#fff" stroke-width="2.5"/><text x="${q.x}" y="${q.y+4.5}" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">${l}</text>${(()=>{const n=p.name.length>30?p.name.slice(0,29)+'…':p.name;return`<rect x="${q.x+19}" y="${q.y-10}" width="${n.length*6.4+14}" height="20" rx="10" fill="#fff" fill-opacity=".95" stroke="#DDE5E0"/><text x="${q.x+26}" y="${q.y+4}" font-size="12" font-weight="600" fill="#34423D">${esc(n)}</text>`})()}</g>`};
+ cur.map(stopById).filter(Boolean).forEach((p,i)=>g+=mk(p,i+1,'#176B55',String(p.id)));
+ if(!A&&R)R.dropped.forEach(d=>{const p=stopById(d.stop.id);if(p)g+=mk({...p,name:p.name+' · skipped'},'×','#D99A2B',String(p.id))});
+ if(S.start)g+=mk(S.start,'S','#34423D','start');if(S.end&&!(S.start&&near(S.start,S.end)))g+=mk(S.end,'E','#34423D','end');
+ if(S.prev){const q=sp(S.prev.x,S.prev.y);g+=`<g pointer-events="none"><circle cx="${q.x}" cy="${q.y}" r="24" fill="#D99A2B" opacity=".18"/><circle cx="${q.x}" cy="${q.y}" r="13" fill="#fff" stroke="#D99A2B" stroke-width="3" stroke-dasharray="4 3"/><circle cx="${q.x}" cy="${q.y}" r="4.5" fill="#D99A2B"/><text x="${q.x+19}" y="${q.y+4}" font-size="12" font-weight="600" fill="#8A5A0B" paint-order="stroke" stroke="#fff" stroke-width="3.5">${esc(S.prev.name||'New place')} (preview)</text></g>`}
+ const bar=10*V.k;g+=`<g><line x1="16" x2="${16+bar}" y1="${H-48}" y2="${H-48}" stroke="#34423D" stroke-width="2"/><text x="16" y="${H-54}" font-size="10" fill="#34423D">10 units (0.5 km)</text></g>`;
+ $('#map').innerHTML=g;$('#legend').style.display=(A||S.arm)?'':'none';$('#zi').disabled=V.k>=KMIN()*8-.01;$('#zo').disabled=V.k<=KMIN()+.01;$('#map').style.cursor=S.arm?'crosshair':'';
+ $('#legend').innerHTML=(lg||(S.arm?`Click the map to place “${esc(S.arm)}”`:'Fictional demo town'))+`<br><span class="mut">Synthetic coordinate map, not road navigation. Distances are Euclidean.</span>`}
+const KMIN=()=>Math.min(W,H)/104;function lim(){const kn=KMIN();V.k=Math.max(kn,Math.min(kn*8,V.k));const hx=W/2/V.k,hy=H/2/V.k,B=25;V.x=hx>=50+B?50:Math.max(hx-B,Math.min(100+B-hx,V.x));V.y=hy>=50+B?50:Math.max(hy-B,Math.min(100+B-hy,V.y))}
+const later=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(drawMap)};
+function zoomAt(f,sx=W/2,sy=H/2){const p=un(sx,sy);V.k=Math.max(KMIN(),Math.min(KMIN()*8,V.k*f));V.x=p.x-(sx-W/2)/V.k;V.y=p.y+(sy-H/2)/V.k;later()}
+function select(id){if(drag.moved)return;S.sel=S.sel===id?null:id;const p=id==='start'?S.start:id==='end'?S.end:stopById(id);if(p&&S.sel){V.x=p.x;V.y=p.y}render()}
+function addCtx(i){if(drag.moved)return;const p=allPlaces()[i];addStop({name:p.name,x:p.x,y:p.y})}
+(function(){const m=$('#map');let st=null;
+ m.addEventListener('wheel',e=>{e.preventDefault();const b=m.getBoundingClientRect();zoomAt(e.deltaY<0?1.2:.83,e.clientX-b.left,e.clientY-b.top)},{passive:false});
+ m.addEventListener('pointerdown',e=>{st={x:e.clientX,y:e.clientY,vx:V.x,vy:V.y}});
+ window.addEventListener('pointermove',e=>{if(!st)return;const dx=e.clientX-st.x,dy=e.clientY-st.y;if(!drag.moved&&Math.hypot(dx,dy)<5)return;drag.moved=true;V.x=st.vx-dx/V.k;V.y=st.vy+dy/V.k;later()});
+ window.addEventListener('pointerup',()=>{st=null;setTimeout(()=>{drag.moved=false},0)});
+ m.addEventListener('click',e=>{if(!S.arm||drag.moved||e.target.closest('[data-pt]'))return;const b=m.getBoundingClientRect(),p=un(e.clientX-b.left,e.clientY-b.top);addCustom(S.arm,Math.round(p.x*10)/10,Math.round(p.y*10)/10);S.arm=null});
+ $('#zi').onclick=()=>zoomAt(1.4);$('#zo').onclick=()=>zoomAt(1/1.4);$('#zf').onclick=()=>{fitView();drawMap()};window.addEventListener('resize',later)})();
+/* ===== Panels ===== */
+function render(fit=false){if(fit)fitView();size();$('#cnt').textContent=S.stops.length?`(${S.stops.length})`:'';
+ const ap=allPlaces(),inTrip=n=>S.stops.some(s=>s.name===n);
+ $('#ddl').innerHTML=ap.map((p,i)=>`<label class="pk"><input type="checkbox" data-pk="${i}" ${inTrip(p.name)?'checked disabled':S.pick.has(i)?'checked':''}> ${esc(p.name)}${inTrip(p.name)?' <span class="mut">in trip</span>':''}${i>=PL.length?' <span class="mut">(yours)</span>':''}</label>`).join('');
+ $('#ddc').textContent=S.pick.size?`${S.pick.size} selected`:'Choose places from the list';
+ const opts=sel=>ap.map(p=>`<option value="${esc(p.name)}" ${sel&&sel.name===p.name?'selected':''}>${esc(p.name)}</option>`).join('');
+ $('#st').innerHTML='<option value="">Choose start…</option>'+opts(S.start);$('#en').innerHTML='<option value="">Finish at last stop</option>'+opts(S.end);
+ $('#stops').innerHTML=S.stops.length?S.stops.map((s,i)=>`<li class="stop ${S.sel===String(s.id)?'sel':''}" data-id="${s.id}"><div class="top"><span class="num">${i+1}</span><b>${esc(s.name)}</b><button class="btn" data-a="up" aria-label="Move up">↑</button><button class="btn" data-a="dn" aria-label="Move down">↓</button><button class="btn" data-a="rm" aria-label="Remove">✕</button></div><div class="f"><label class="fl">Priority<select data-f="pri" aria-label="Priority">${PRI.map(p=>`<option ${p===s.pri?'selected':''}>${p}</option>`).join('')}</select></label><label class="fl">Visit (min)<input data-f="visit" type="number" min="0" step="5" value="${s.visit}" aria-label="Visit minutes"></label><label class="fl">Position<select data-f="lock" aria-label="Lock position"><option value="">Any</option>${S.stops.map((_,k)=>`<option value="${k+1}" ${s.lock===k+1?'selected':''}>Lock at ${k+1}</option>`).join('')}</select></label></div></li>`).join(''):'<div class="empty">No destinations yet. Choose places from the list above, or click a grey dot on the map.</div>';
+ renderRes();drawMap()}
+function renderRes(){let h='';const m=S.msg;if(m)h+=`<div class="note ${m.k}">${m.t}</div>`;if(S.busy)h+='<div class="note info"><span class="spin"></span>Comparing visit orders — watch the map.</div>';
+ const r=S.res;if(!r){$('#res').innerHTML=h+(S.busy?'':'<div class="empty"><b>No route yet.</b><br>Pick a start and at least two destinations, then press Optimise my route.</div>');return}
+ const {opt,orig}=r.p,row=(l,a,b,f,tot)=>`<tr class="${tot?'tot':''}"><td>${l}</td><td>${f(a)}</td><td>${f(b)}</td><td><span class="pill ${a-b>.05?'up':a-b<-.05?'dn':''}">${Math.abs(a-b)<.05?'—':(a>b?'−':'+')+f(Math.abs(a-b))}</span></td></tr>`,km=x=>x.toFixed(1)+' km',inr=x=>'₹'+Math.round(x).toLocaleString('en-IN'),c=S.cfg;
+ 
+ h+=`<div class="note ${r.p.feasible?'ok':'err'}"><b>${r.p.feasible?'Route ready':'Doesn’t fit your time'}.</b> ${r.p.exact?'Best order found by exhaustive search on these estimates.':'Best-found order (heuristic, not guaranteed shortest).'} Finish ${clock(r.sch.finish)}${r.p.buffer>=0?`, ${fmtMin(r.p.buffer)} spare`:`, ${fmtMin(r.p.overBy)} over`}.</div>`;
+ r.p.conflicts.forEach(x=>h+=`<div class="note warn">${esc(x)}</div>`);
+ if(!r.p.feasible)h+=`<div class="note err"><b>Conflict:</b> Must Visit and locked stops alone need ${fmtMin(opt.total)} but you have ${fmtMin(c.avail)}. Try: extend the trip by ${fmtMin(r.p.overBy)}, shorten visit times, downgrade a stop to Important or Flexible, or split the trip across two days.</div>`;
+ r.p.dropped.forEach(d=>h+=`<div class="note warn"><b>${esc(d.stop.name)} (${d.stop.priority}) not scheduled.</b> It would exceed your time; leaving it out frees about ${fmtMin(d.saved)}. Extend the trip or plan it as a separate itinerary.</div>`);if(r.p.dropped.length){const need=Math.ceil((opt.total+r.p.dropped.reduce((a,d)=>a+d.saved,0))/15)*15;h+=`<div class="acts"><button class="btn add" data-a="extend" data-m="${need}">Include ${r.p.dropped.length>1?'these stops':'it'}: extend trip to ${fmtMin(need)}</button></div>`}
+ if(r.out.length)h+=`<div class="note warn"><b>Scattered trip.</b> ${r.out.map(esc).join(', ')} ${r.out.length>1?'is':'are'} far from the rest. Keep the whole journey (shown), focus on the main cluster, or plan these separately.<div class="acts"><button class="btn" data-a="focus">Focus on main cluster</button></div></div>`;
+ h+=`<div class="acts"><button class="btn" data-a="replay">▶ Replay the search</button></div><div class="seq"><div><b><i class="sw o"></i>Original route</b><code>${seq(r.p.kept,r.order)}</code></div><div><b><i class="sw"></i>Optimised route</b><code>${seq(r.order,r.order)}</code></div></div><div class="kpis"><div class="kpi"><span>Distance</span><b>${km(opt.dist)}</b><small>${orig.dist-opt.dist>.05?'−'+Math.round((1-opt.dist/orig.dist)*100)+'% vs original':'same as original'}</small></div><div class="kpi"><span>Total time</span><b>${fmtMin(opt.total)}</b><small>${orig.total-opt.total>.5?'−'+fmtMin(orig.total-opt.total)+' vs original':'same as original'}</small></div><div class="kpi"><span>Finish</span><b>${clock(r.sch.finish)}</b><small>${r.p.buffer>=0?fmtMin(r.p.buffer)+' spare':fmtMin(r.p.overBy)+' over'}</small></div></div><h2>Original vs recommended</h2><div class="cmpwrap"><table class="cmp"><thead><tr><th></th><th>Original</th><th>Optimised</th><th>Saved</th></tr></thead>${row('Distance',orig.dist,opt.dist,km)}${row('Travel time',orig.travel,opt.travel,fmtMin)}<tr><td>Visit time</td><td>${fmtMin(orig.visit)}</td><td>${fmtMin(opt.visit)}</td><td><span class="pill">—</span></td></tr><tr><td>Destinations</td><td>${r.p.kept.length}</td><td>${r.order.length}</td><td><span class="pill">—</span></td></tr>${row('Total trip',orig.total,opt.total,fmtMin,1)}${opt.cost!=null?row('Est. cost',orig.cost,opt.cost,inr):''}</table></div>`;
+ 
+ const why=[];if(orig.dist-opt.dist>.05)why.push(`cuts ${km(orig.dist-opt.dist)} (${Math.round((1-opt.dist/orig.dist)*100)}%) of distance`);if(orig.travel-opt.travel>.5)why.push(`saves ${fmtMin(orig.travel-opt.travel)} of travel`);
+ const tr=[];if(opt.travel>orig.travel+.5)tr.push(`adds ${fmtMin(opt.travel-orig.travel)} of travel to gain distance`);if(opt.dist>orig.dist+.05)tr.push(`adds ${km(opt.dist-orig.dist)} to gain time`);
+ h+=`<div class="note info"><b>Why this order:</b> ${nnTxt(r)} ${why.length?'it '+why.join(' and ')+'.':'your entered order was already as good as any we found.'} Objective: ${{balanced:'balanced',time:'fastest',dist:'shortest distance',cost:'lowest cost (distance × your rate)'}[c.obj]}.${tr.length?' Trade-off: it '+tr.join('; ')+'.':''}</div>`;
+ h+=`<h2>Itinerary</h2><div class="it"><span class="num" style="background:var(--tx)">S</span><div><b>${esc(S.start.name)}</b><br><small>Depart ${clock(c.dep)}</small></div></div>`;
+ r.sch.rows.forEach((x,i)=>{const s=r.p.st[x.id],pm=i?r.p.st[r.sch.rows[i-1].id].mi:0,nn=r.sch.rows.slice(i).every(y=>r.M.dist[pm][s.mi]<=r.M.dist[pm][r.p.st[y.id].mi]+1e-6);h+=`<div class="it ${S.sel===String(x.id)?'sel':''}" data-id="${x.id}"><span class="num">${i+1}</span><div><b>${esc(s.name)}</b> <small>${s.priority}${s.lock?`, locked at ${s.lock}`:''}</small><br><small>→ ${x.d.toFixed(1)} km · ${fmtMin(x.tr)} travel</small>${nn?' <span class="nn">Nearest next</span>':''}<br>${clock(x.arrive)}–${clock(x.depart)} <small>(${s.visit} min visit)</small></div></div>`});
+ if(r.sch.end)h+=`<div class="it"><span class="num" style="background:var(--tx)">E</span><div><b>${esc(S.end.name)}</b><br><small>→ ${r.sch.end.d.toFixed(1)} km · arrive ${clock(r.sch.end.arrive)}</small></div></div>`;
+ h+=`<div class="acts"><button class="btn" data-a="share">Share summary</button></div>`+(S.share?`<textarea readonly aria-label="Trip summary">${esc(S.share)}</textarea>`:'');$('#res').innerHTML=h}
+const seq=(ids,ord)=>['S',...ids.map(i=>ord.indexOf(i)+1),S.end?(near(S.start,S.end)?'S':'E'):null].filter(Boolean).join(' → ');
+function nnTxt(r){const rows=r.sch.rows;let k=0;rows.forEach((x,i)=>{const s=r.p.st[x.id],pm=i?r.p.st[rows[i-1].id].mi:0;if(rows.slice(i).every(y=>r.M.dist[pm][s.mi]<=r.M.dist[pm][r.p.st[y.id].mi]+1e-6))k++});return rows.length?`${k} of ${rows.length} hops go to the nearest unvisited stop.`:''}
+/* ===== Demo places + live preview ===== */
+const DEMO=[["Daisy’s Bakery",40,65],["Maple Clinic",60,90],["Orchid Nursery",55,35],["Riverbend Gym",72,40],["Harbour Pier",5,5],["Sunset Point",95,45],["Pine Hill Temple",62,72],["Town Library",35,45]];
+
+const uq=i=>[...new Set(DEMO.map(d=>d[i]))].sort((a,b)=>a-b).map(v=>`<option value="${v}"></option>`).join('');$('#xs').innerHTML=uq(1);$('#ys').innerHTML=uq(2);
+function refreshDemo(){$('#dn').innerHTML=DEMO.filter(d=>!byName(d[0])).map(d=>`<option value="${esc(d[0])}" label="x ${d[1]}, y ${d[2]}"></option>`).join('')}
+function prevUpdate(center){const x=$('#cx').value,y=$('#cy').value;if(x===''||y===''||!isFinite(+x)||!isFinite(+y)){S.prev=null;return later()}S.prev={name:$('#cn').value.trim(),x:+x,y:+y};if(center){V.x=+x;V.y=+y;if(V.k<14)V.k=22}later()}
+$('#cn').addEventListener('input',()=>{const v=$('#cn').value.trim().toLowerCase(),d=DEMO.find(d=>d[0].toLowerCase()===v&&!byName(d[0]));if(d){$('#cx').value=d[1];$('#cy').value=d[2];prevUpdate(true)}});
+for(const id of['cn','cx','cy'])$('#'+id).addEventListener('input',()=>prevUpdate(id!=='cn'));
+const _render=render;render=function(f){_render(f);refreshDemo()};
+$('#docbtn').onclick=()=>$('#doc').showModal();$('#docx').onclick=()=>$('#doc').close();$('#doc').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.close()});
+/* ===== Actions ===== */
+function changed(fit=true){S.run++;S.anim=null;S.busy=false;S.res=null;S.msg=null;S.share=null;save();render(fit)}
+function addStop(p){if(S.stops.some(s=>near(s,p))||(S.start&&near(S.start,p))){S.msg={k:'warn',t:`“${esc(p.name)}” is already in your trip (or is your start).`};return render()}S.stops.push({id:uid++,name:p.name,x:p.x,y:p.y,visit:30,pri:'Important',lock:null});changed()}
+function addCustom(name,x,y){name=name.trim();if(!name){S.msg={k:'err',t:'Give your place a name first.'};return render()}if(byName(name)){S.msg={k:'err',t:`A place called “${esc(name)}” already exists. Choose a different name.`};return render()}
+ if(!isFinite(x)||!isFinite(y)){S.msg={k:'err',t:'Enter both x and y in km, or use “Place on map”.'};return render()}S.custom.push({name,x,y});$('#cn').value=$('#cx').value=$('#cy').value='';S.prev=null;addStop({name,x,y})}
+$('#cadd').onclick=()=>{const x=$('#cx').value,y=$('#cy').value;if(x===''||y==='')return(S.msg={k:'info',t:'No coordinates typed: press “Place on map”, then click the map.'},render());addCustom($('#cn').value,+x,+y)};
+$('#cmap').onclick=()=>{const n=$('#cn').value.trim();if(!n)return(S.msg={k:'err',t:'Type a name first, then press “Place on map”.'},render());if(byName(n))return(S.msg={k:'err',t:`“${esc(n)}” already exists. Choose a different name.`},render());S.arm=n;S.msg={k:'info',t:`Click the map where “${esc(n)}” is.`};render()};
+$('#ddl').addEventListener('change',e=>{const i=e.target.dataset.pk;if(i==null)return;e.target.checked?S.pick.add(+i):S.pick.delete(+i);$('#ddc').textContent=S.pick.size?`${S.pick.size} selected`:'Choose places from the list'});
+$('#allsel').onclick=()=>{allPlaces().forEach((p,i)=>{if(!S.stops.some(s=>s.name===p.name)&&!(S.start&&S.start.name===p.name))S.pick.add(i)});render()};
+$('#addsel').onclick=()=>{const ap=allPlaces();let n=0;[...S.pick].sort((a,b)=>a-b).forEach(i=>{const p=ap[i];if(p&&!S.stops.some(s=>s.name===p.name)&&!(S.start&&S.start.name===p.name)){S.stops.push({id:uid++,name:p.name,x:p.x,y:p.y,visit:30,pri:'Important',lock:null});n++}});S.pick.clear();$('#dd').open=false;if(!n){S.msg={k:'info',t:'Tick one or more places in the list first.'};return render()}changed()};
+$('#st').onchange=e=>{S.start=e.target.value?byName(e.target.value):null;S.stops=S.stops.filter(s=>!(S.start&&s.name===S.start.name));changed()};
+$('#en').onchange=e=>{S.end=e.target.value?byName(e.target.value):null;changed()};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function animate(p,tok){if(typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion:reduce)').matches)return true;
+ const origIds=p.kept,legsN=origIds.length+(S.end?1:0);let fr=p.frames;if(fr.length>12)fr=Array.from({length:12},(_,i)=>p.frames[Math.round(i*(p.frames.length-1)/11)]);
+ for(let k=1;k<=legsN;k++){if(S.run!==tok)return false;S.anim={kind:'orig',order:origIds,origOrder:origIds,upto:k};drawMap();await sleep(260)}
+ await sleep(400);
+ for(let i=0;i<fr.length;i++){if(S.run!==tok)return false;const last=i===fr.length-1;S.anim={kind:'try',order:last?p.order:fr[i].o,origOrder:origIds,d:last?p.opt.dist:fr[i].d,i:i+1,n:fr.length,last};drawMap();await sleep(last?1000:430)}
+ S.anim=null;return S.run===tok}
+async function optimise(){const c0=cfg();S.msg=null;
+ if(!S.start)return(S.msg={k:'err',t:'Choose a start point first (Start dropdown).'},render());
+ if(S.stops.length<2)return(S.msg={k:'err',t:'Add at least two destinations to optimise.'},render());
+ const tok=++S.run;S.res=null;S.anim=null;S.busy=true;render();$('#go').disabled=true;
+ try{const n=S.stops.length,pts=[S.start,...S.stops,...(S.end?[S.end]:[])],list=S.stops.map((x,i)=>({id:x.id,name:x.name,mi:i+1,visit:x.visit,priority:x.pri,lock:x.lock})),s={start:0,end:S.end?n+1:null,cpk:c0.cpk,avail:c0.avail,obj:c0.obj},M=demoMatrix(pts,c0.mode),p=plan(list,M,s),sch=schedule(p.order,M,p.st,s,c0.dep),out=outliers(p.kept,M,p.st,s).map(id=>p.st[id].name);
+  S.cfg=c0;S.pending={p,sch,out,M,s};const ok=await animate(p,tok);if(!ok)return;S.res={p,sch,out,M,order:p.order,dropped:p.dropped};S.busy=false;S.sel=null;render()}
+ catch(e){S.busy=false;S.anim=null;S.res=null;S.msg={k:'err',t:`Optimisation failed: ${esc(e.message)}. Your destinations are unchanged.`};render()}
+ finally{if(S.run===tok)$('#go').disabled=false}}
+async function replay(){const r=S.res;if(!r)return;const tok=++S.run;S.res=null;S.busy=true;render();const ok=await animate(r.p,tok);if(!ok)return;S.res=r;S.busy=false;S.anim=null;render()}
+$('#go').onclick=optimise;
+$('#left').addEventListener('click',e=>{const b=e.target.closest('[data-a]'),li=e.target.closest('.stop');if(e.target.closest('select,input,label'))return;if(!b){if(li)select(li.dataset.id);return}
+ const a=b.dataset.a,id=li&&+li.dataset.id,i=S.stops.findIndex(x=>x.id===id);
+ if(a==='rm'){S.stops.splice(i,1);S.stops.forEach(s=>{if(s.lock>S.stops.length)s.lock=null});changed()}
+ else if(a==='up'&&i>0){[S.stops[i-1],S.stops[i]]=[S.stops[i],S.stops[i-1]];changed(false)}else if(a==='dn'&&i<S.stops.length-1){[S.stops[i+1],S.stops[i]]=[S.stops[i],S.stops[i+1]];changed(false)}});
+$('#left').addEventListener('change',e=>{const f=e.target.dataset.f,li=e.target.closest('.stop');if(!f||!li)return;const s=stopById(li.dataset.id);if(f==='pri')s.pri=e.target.value;if(f==='visit')s.visit=Math.max(0,+e.target.value||0);if(f==='lock')s.lock=e.target.value?+e.target.value:null;changed(false)});
+for(const id of['mode','dep','avail','cpk','obj'])$('#'+id).addEventListener('change',()=>changed(false));
+$('#right').addEventListener('click',e=>{const b=e.target.closest('[data-a]'),it=e.target.closest('.it');
+ if(b){const a=b.dataset.a;if(a==='replay')replay();else if(a==='extend'){$('#avail').value=b.dataset.m;changed(false);optimise()}else if(a==='focus'){const o=new Set(S.res.out);S.stops=S.stops.filter(s=>!o.has(s.name));changed();optimise()}
+  else if(a==='share'){const r=S.res,t=['Trip plan ('+S.cfg.mode+', depart '+clock(S.cfg.dep)+') — DEMO estimates, fictional town','Start: '+S.start.name,...r.sch.rows.map((x,i)=>`${i+1}. ${r.p.st[x.id].name} ${clock(x.arrive)}–${clock(x.depart)}`),...(S.end?['End: '+S.end.name+' '+clock(r.sch.end.arrive)]:[]),`Distance ${r.p.opt.dist.toFixed(1)} km (was ${r.p.orig.dist.toFixed(1)}), total ${fmtMin(r.p.opt.total)}, finish ${clock(r.sch.finish)}.`,...(r.dropped.length?['Not scheduled: '+r.dropped.map(d=>d.stop.name).join(', ')]:[])].join('\n');S.share=t;try{navigator.clipboard.writeText(t)}catch(e){}renderRes()}return}
+ if(it&&it.dataset.id)select(it.dataset.id)});
+function loadDemo(){S.start=byName('Central Station');S.end=byName('Central Station');S.stops=[['Cedar Co-working','Important'],['Lincoln Stadium','Important'],['City Hospital','Must Visit'],['Green Park','Important'],['Mary’s Church','Important'],['Oak Street Bakery','Important'],['Sunrise Mall','Important'],['St. Joseph’s School','Important'],['Riverside Café','Important'],['Peter’s Lake','Important'],['Rose Garden','Important']].map(([n,pri])=>{const p=byName(n);return{id:uid++,name:n,x:p.x,y:p.y,visit:30,pri,lock:null}});S.res=null;S.msg=null;save()}
+$('#load').onclick=()=>{S.run++;loadDemo();render(true);optimise()};
+(()=>{if(!S.stops.length)loadDemo();render(true);optimise()})();
+</script></body></html>
