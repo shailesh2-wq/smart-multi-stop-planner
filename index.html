@@ -51,7 +51,7 @@ dialog{border:0;border-radius:16px;padding:0;width:min(720px,94vw);max-height:88
 @media(max-width:700px){
 header{padding:8px 12px;gap:8px}.logo{width:30px;height:30px}.brand h1{font-size:15px}.brand p,.badge{display:none}.docbtn{padding:6px 11px;font-size:12px}
 main{padding-bottom:env(safe-area-inset-bottom,0px)}
-#mapwrap{order:0;height:44vh;height:44dvh;min-height:260px;position:sticky;top:0;z-index:20;box-shadow:0 6px 16px rgba(20,40,30,.18)}#left{order:1}#right{order:2}
+#mapwrap{order:0;height:auto;aspect-ratio:4/3;min-height:0;width:min(calc(100% - 16px),calc(56vh*4/3));width:min(calc(100% - 16px),calc(56dvh*4/3));margin:8px auto;border:1px solid #B9D8C8;border-radius:12px;position:sticky;top:6px;z-index:20;box-shadow:0 6px 16px rgba(20,40,30,.18)}#left{order:1}#right{order:2}
 .mchip{top:8px;left:8px;font-size:10px;padding:3px 9px;max-width:calc(100% - 66px)}.ctl{top:8px;right:8px}.ctl button{width:40px;height:40px}
 #legend{left:8px;bottom:8px;max-width:calc(100% - 16px);font-size:11px;padding:6px 10px}
 .btn{min-height:38px}input,select,textarea{font-size:16px}.f{grid-template-columns:1fr 1fr}.f .fl:last-child{grid-column:1/-1}.f select,.f input{font-size:16px;padding:7px 8px}
@@ -171,11 +171,11 @@ function drawMap(){size();lim();const A=S.anim,R=S.res;let g='';
  if(S.start)g+=mk(S.start,'S','#34423D','start');if(S.end&&!(S.start&&near(S.start,S.end)))g+=mk(S.end,'E','#34423D','end');
  if(S.prev){const q=sp(S.prev.x,S.prev.y);g+=`<g pointer-events="none"><circle cx="${q.x}" cy="${q.y}" r="24" fill="#D99A2B" opacity=".18"/><circle cx="${q.x}" cy="${q.y}" r="13" fill="#fff" stroke="#D99A2B" stroke-width="3" stroke-dasharray="4 3"/><circle cx="${q.x}" cy="${q.y}" r="4.5" fill="#D99A2B"/><text x="${q.x+19}" y="${q.y+4}" font-size="12" font-weight="600" fill="#8A5A0B" paint-order="stroke" stroke="#fff" stroke-width="3.5">${esc(S.prev.name||'New place')} (preview)</text></g>`}
  const bar=10*V.k;g+=`<g><line x1="16" x2="${16+bar}" y1="${H-48}" y2="${H-48}" stroke="#34423D" stroke-width="2"/><text x="16" y="${H-54}" font-size="10" fill="#34423D">10 units (0.5 km)</text></g>`;
- $('#map').innerHTML=g;$('#legend').style.display=(A||S.arm)?'':'none';$('#zi').disabled=V.k>=KMIN()*8-.01;$('#zo').disabled=V.k<=KMIN()+.01;$('#map').style.cursor=S.arm?'crosshair':'';
+ $('#map').innerHTML=g;$('#legend').style.display=(A||S.arm)?'':'none';$('#zi').disabled=V.k>=KMIN()*ZMAX()-.01;$('#zo').disabled=V.k<=KMIN()+.01;$('#map').style.cursor=S.arm?'crosshair':'';
  $('#legend').innerHTML=(lg||(S.arm?`Click the map to place “${esc(S.arm)}”`:'Fictional demo town'))+`<br><span class="mut">Synthetic coordinate map, not road navigation. Distances are Euclidean.</span>`}
-const KMIN=()=>Math.min(W,H)/104;function lim(){const kn=KMIN();V.k=Math.max(kn,Math.min(kn*8,V.k));const hx=W/2/V.k,hy=H/2/V.k,B=25;V.x=hx>=50+B?50:Math.max(hx-B,Math.min(100+B-hx,V.x));V.y=hy>=50+B?50:Math.max(hy-B,Math.min(100+B-hy,V.y))}
+const KMIN=()=>Math.min(W,H)/104,ZMAX=()=>window.matchMedia('(max-width:700px)').matches?3:8;function lim(){const kn=KMIN();V.k=Math.max(kn,Math.min(kn*ZMAX(),V.k));const hx=W/2/V.k,hy=H/2/V.k,B=25;V.x=hx>=50+B?50:Math.max(hx-B,Math.min(100+B-hx,V.x));V.y=hy>=50+B?50:Math.max(hy-B,Math.min(100+B-hy,V.y))}
 const later=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(drawMap)};
-function zoomAt(f,sx=W/2,sy=H/2){const p=un(sx,sy);V.k=Math.max(KMIN(),Math.min(KMIN()*8,V.k*f));V.x=p.x-(sx-W/2)/V.k;V.y=p.y+(sy-H/2)/V.k;later()}
+function zoomAt(f,sx=W/2,sy=H/2){const p=un(sx,sy);V.k=Math.max(KMIN(),Math.min(KMIN()*ZMAX(),V.k*f));V.x=p.x-(sx-W/2)/V.k;V.y=p.y+(sy-H/2)/V.k;later()}
 function select(id){if(drag.moved)return;S.sel=S.sel===id?null:id;const p=id==='start'?S.start:id==='end'?S.end:stopById(id);if(p&&S.sel){V.x=p.x;V.y=p.y}render()}
 function addCtx(i){if(drag.moved)return;const p=allPlaces()[i];addStop({name:p.name,x:p.x,y:p.y})}
 (function(){const m=$('#map');let st=null;
